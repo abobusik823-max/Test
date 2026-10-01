@@ -1,1 +1,321 @@
+--// AXIOM MOBILE AIM TRAINER
+--// Для собственного Roblox-проекта.
+--// Сенсорное управление: меню, Aim Assist, ESP и FOV Circle.
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+local Config = {
+    AimAssist = false,
+    ESP = false,
+    FOV = 150,
+    Smoothness = 0.12,
+    MenuOpen = true
+}
+
+--==================================================
+-- GUI
+--==================================================
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "AxiomMobile"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local main = Instance.new("Frame")
+main.Size = UDim2.fromOffset(310, 390)
+main.Position = UDim2.new(0, 20, 0.5, -195)
+main.BackgroundColor3 = Color3.fromRGB(17, 18, 25)
+main.BorderSizePixel = 0
+main.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 16)
+corner.Parent = main
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(70, 75, 100)
+stroke.Thickness = 1.5
+stroke.Parent = main
+
+--==================================================
+-- TITLE
+--==================================================
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -30, 0, 50)
+title.Position = UDim2.fromOffset(15, 8)
+title.BackgroundTransparency = 1
+title.Text = "AXIOM"
+title.TextColor3 = Color3.fromRGB(235, 240, 255)
+title.TextSize = 24
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = main
+
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, -30, 0, 25)
+subtitle.Position = UDim2.fromOffset(15, 42)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "MOBILE AIM TRAINER"
+subtitle.TextColor3 = Color3.fromRGB(120, 125, 145)
+subtitle.TextSize = 11
+subtitle.Font = Enum.Font.GothamMedium
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.Parent = main
+
+--==================================================
+-- BUTTON CREATOR
+--==================================================
+
+local function createButton(text, y)
+    local button = Instance.new("TextButton")
+
+    button.Size = UDim2.new(1, -30, 0, 52)
+    button.Position = UDim2.fromOffset(15, y)
+
+    button.BackgroundColor3 = Color3.fromRGB(28, 29, 40)
+    button.Text = ""
+    button.AutoButtonColor = false
+
+    button.Parent = main
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 10)
+    c.Parent = button
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -80, 1, 0)
+    label.Position = UDim2.fromOffset(15, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(230, 230, 240)
+    label.TextSize = 14
+    label.Font = Enum.Font.GothamMedium
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = button
+
+    local state = Instance.new("TextLabel")
+    state.Size = UDim2.fromOffset(48, 27)
+    state.Position = UDim2.new(1, -62, 0.5, -13)
+
+    state.BackgroundColor3 = Color3.fromRGB(55, 56, 70)
+    state.Text = "OFF"
+    state.TextColor3 = Color3.fromRGB(175, 175, 190)
+    state.TextSize = 10
+    state.Font = Enum.Font.GothamBold
+
+    state.Parent = button
+
+    local sc = Instance.new("UICorner")
+    sc.CornerRadius = UDim.new(0, 8)
+    sc.Parent = state
+
+    local enabled = false
+
+    button.Activated:Connect(function()
+        enabled = not enabled
+
+        state.Text = enabled and "ON" or "OFF"
+
+        state.BackgroundColor3 =
+            enabled
+            and Color3.fromRGB(75, 125, 255)
+            or Color3.fromRGB(55, 56, 70)
+
+        if text == "Aim Assist" then
+            Config.AimAssist = enabled
+
+        elseif text == "Target ESP" then
+            Config.ESP = enabled
+
+        elseif text == "FOV Circle" then
+            fovCircle.Visible = enabled
+        end
+    end)
+
+    return button
+end
+
+createButton("Aim Assist", 82)
+createButton("Target ESP", 142)
+createButton("FOV Circle", 202)
+
+--==================================================
+-- FOV CIRCLE
+--==================================================
+
+local fovCircle = Instance.new("Frame")
+
+fovCircle.Size = UDim2.fromOffset(
+    Config.FOV * 2,
+    Config.FOV * 2
+)
+
+fovCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+fovCircle.BackgroundTransparency = 1
+fovCircle.Visible = false
+fovCircle.Parent = gui
+
+local fovStroke = Instance.new("UIStroke")
+fovStroke.Color = Color3.fromRGB(90, 150, 255)
+fovStroke.Thickness = 2
+fovStroke.Transparency = 0.1
+fovStroke.Parent = fovCircle
+
+local fovCorner = Instance.new("UICorner")
+fovCorner.CornerRadius = UDim.new(1, 0)
+fovCorner.Parent = fovCircle
+
+--==================================================
+-- FOV TEXT
+--==================================================
+
+local fovText = Instance.new("TextLabel")
+
+fovText.Size = UDim2.new(1, -30, 0, 30)
+fovText.Position = UDim2.fromOffset(15, 270)
+
+fovText.BackgroundTransparency = 1
+fovText.Text = "FOV 150"
+fovText.TextColor3 = Color3.fromRGB(180, 185, 200)
+fovText.TextSize = 13
+fovText.Font = Enum.Font.GothamMedium
+fovText.TextXAlignment = Enum.TextXAlignment.Left
+
+fovText.Parent = main
+
+--==================================================
+-- FOV SLIDER
+--==================================================
+
+local slider = Instance.new("Frame")
+
+slider.Size = UDim2.new(1, -30, 0, 8)
+slider.Position = UDim2.fromOffset(15, 305)
+
+slider.BackgroundColor3 = Color3.fromRGB(45, 46, 60)
+slider.BorderSizePixel = 0
+slider.Parent = main
+
+local sliderCorner = Instance.new("UICorner")
+sliderCorner.CornerRadius = UDim.new(1, 0)
+sliderCorner.Parent = slider
+
+local fill = Instance.new("Frame")
+
+fill.Size = UDim2.new(0.35, 0, 1, 0)
+fill.BackgroundColor3 = Color3.fromRGB(80, 135, 255)
+fill.BorderSizePixel = 0
+fill.Parent = slider
+
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(1, 0)
+fillCorner.Parent = fill
+
+-- Touch-friendly slider
+local dragging = false
+
+local function updateSlider(x)
+    local relative =
+        math.clamp(
+            (x - slider.AbsolutePosition.X)
+            / slider.AbsoluteSize.X,
+            0,
+            1
+        )
+
+    Config.FOV = math.floor(50 + relative * 300)
+
+    fill.Size = UDim2.new(relative, 0, 1, 0)
+
+    fovText.Text = "FOV " .. Config.FOV
+
+    fovCircle.Size =
+        UDim2.fromOffset(
+            Config.FOV * 2,
+            Config.FOV * 2
+        )
+end
+
+slider.InputBegan:Connect(function(input)
+
+    if input.UserInputType == Enum.UserInputType.Touch
+        or input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+        dragging = true
+        updateSlider(input.Position.X)
+    end
+end)
+
+slider.InputEnded:Connect(function(input)
+
+    if input.UserInputType == Enum.UserInputType.Touch
+        or input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+        dragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+    if dragging then
+
+        if input.UserInputType == Enum.UserInputType.Touch
+            or input.UserInputType == Enum.UserInputType.MouseMovement then
+
+            updateSlider(input.Position.X)
+        end
+    end
+end)
+
+--==================================================
+-- MOBILE MENU BUTTON
+--==================================================
+
+local openButton = Instance.new("TextButton")
+
+openButton.Size = UDim2.fromOffset(58, 58)
+openButton.Position = UDim2.new(1, -75, 1, -90)
+
+openButton.BackgroundColor3 = Color3.fromRGB(25, 26, 35)
+openButton.Text = "A"
+openButton.TextColor3 = Color3.fromRGB(100, 155, 255)
+openButton.TextSize = 22
+openButton.Font = Enum.Font.GothamBold
+
+openButton.Parent = gui
+
+local openCorner = Instance.new("UICorner")
+openCorner.CornerRadius = UDim.new(1, 0)
+openCorner.Parent = openButton
+
+local openStroke = Instance.new("UIStroke")
+openStroke.Color = Color3.fromRGB(75, 125, 255)
+openStroke.Thickness = 2
+openStroke.Parent = openButton
+
+openButton.Activated:Connect(function()
+    Config.MenuOpen = not Config.MenuOpen
+    main.Visible = Config.MenuOpen
+end)
+
+--==================================================
+-- CENTER / FOV POSITION
+--==================================================
+
+RunService.RenderStepped:Connect(function()
+
+    local viewport = camera.ViewportSize
+
+    fovCircle.Position =
+        UDim2.fromOffset(
+            viewport.X / 2,
+            viewport.Y / 2
+        )
+end)
